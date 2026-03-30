@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Trắc Nghiệm Lớp 8 PRO</title>
+    <style>
+        :root { --primary: #2563eb; --success: #22c55e; --error: #ef4444; --bg: #f1f5f9; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .quiz-card { background: white; width: 90%; max-width: 500px; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; }
+        h1 { color: var(--primary); font-size: 24px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+        #question-text { font-size: 18px; font-weight: 600; margin-bottom: 20px; color: #1e293b; min-height: 50px; }
+        .options { display: grid; gap: 12px; }
+        .btn-opt { background: #f8fafc; border: 2px solid #e2e8f0; padding: 15px; border-radius: 12px; cursor: pointer; font-size: 16px; transition: all 0.2s; text-align: left; font-weight: 500; }
+        .btn-opt:hover { border-color: var(--primary); background: #eff6ff; transform: translateY(-2px); }
+        .btn-opt.correct { background: var(--success) !important; color: white; border-color: var(--success); }
+        .btn-opt.wrong { background: var(--error) !important; color: white; border-color: var(--error); }
+        #score-board { margin-top: 20px; font-size: 14px; color: #64748b; font-weight: bold; }
+        .progress-bar { height: 8px; background: #e2e8f0; border-radius: 4px; margin-bottom: 20px; overflow: hidden; }
+        #progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s; }
+        #result-screen { display: none; }
+        .restart-btn { margin-top: 20px; background: var(--primary); color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="quiz-card" id="quiz-box">
+    <div class="progress-bar"><div id="progress-fill"></div></div>
+    <div id="quiz-screen">
+        <div id="question-text">Đang tải câu hỏi...</div>
+        <div class="options">
+            <button class="btn-opt" onclick="check(0)" id="opt0"></button>
+            <button class="btn-opt" onclick="check(1)" id="opt1"></button>
+            <button class="btn-opt" onclick="check(2)" id="opt2"></button>
+            <button class="btn-opt" onclick="check(3)" id="opt3"></button>
+        </div>
+        <div id="score-board">Câu hỏi: <span id="cur-q">1</span>/<span id="total-q">0</span></div>
+    </div>
+
+    <div id="result-screen">
+        <h2>Kết Thúc Bài Thi! 🎉</h2>
+        <p style="font-size: 20px;">Bạn đúng: <span id="final-score" style="color: var(--success); font-weight: bold;">0</span> câu</p>
+        <p id="rank-msg"></p>
+        <button class="restart-btn" onclick="location.reload()">Làm lại từ đầu</button>
+    </div>
+</div>
+
+<script>
+    // DỮ LIỆU CÂU HỎI CÓ SẴN (Bạn có thể thêm ở đây)
+    const questions = [
+        { q: "Ký hiệu hóa học của Axit Sunfuric là gì?", opts: ["HCl", "H2SO4", "NaOH", "HNO3"], ans: 1 },
+        { q: "Số nguyên tố nhỏ nhất là số nào?", opts: ["0", "1", "2", "3"], ans: 2 },
+        { q: "Ai là tác giả của tác phẩm 'Lão Hạc'?", opts: ["Nam Cao", "Ngô Tất Tố", "Thạch Lam", "Tô Hoài"], ans: 0 },
+        { q: "Đơn vị của hiệu điện thế là gì?", opts: ["Ampe (A)", "Ôm (Ω)", "Oát (W)", "Vôn (V)"], ans: 3 },
+        { q: "Trong Scratch, khối lệnh 'Repeat 10' nằm trong nhóm nào?", opts: ["Motion", "Events", "Control", "Sensing"], ans: 2 }
+    ];
+
+    let currentIdx = 0;
+    let score = 0;
+    let canClick = true;
+
+    function init() {
+        document.getElementById('total-q').innerText = questions.length;
+        showQuestion();
+    }
+
+    function showQuestion() {
+        canClick = true;
+        const q = questions[currentIdx];
+        document.getElementById('question-text').innerText = q.q;
+        document.getElementById('cur-q').innerText = currentIdx + 1;
+        
+        // Cập nhật thanh tiến trình
+        const percent = ((currentIdx) / questions.length) * 100;
+        document.getElementById('progress-fill').style.width = percent + "%";
+
+        for(let i=0; i<4; i++) {
+            const btn = document.getElementById('opt' + i);
+            btn.innerText = q.opts[i];
+            btn.className = "btn-opt"; // Reset màu
+        }
+    }
+
+    function check(idx) {
+        if(!canClick) return;
+        canClick = false;
+
+        const correct = questions[currentIdx].ans;
+        const btnSelected = document.getElementById('opt' + idx);
+        
+        if(idx === correct) {
+            score++;
+            btnSelected.classList.add('correct');
+        } else {
+            btnSelected.classList.add('wrong');
+            document.getElementById('opt' + correct).classList.add('correct');
+        }
+
+        setTimeout(() => {
+            currentIdx++;
+            if(currentIdx < questions.length) {
+                showQuestion();
+            } else {
+                showResult();
+            }
+        }, 1200); // Chờ 1.2 giây để xem đáp án rồi mới nhảy câu
+    }
+
+    function showResult() {
+        document.getElementById('quiz-screen').style.display = "none";
+        document.getElementById('result-screen').style.display = "block";
+        document.getElementById('final-score').innerText = score;
+        document.getElementById('progress-fill').style.width = "100%";
+
+        let msg = "";
+        if(score === questions.length) msg = "Quá đỉnh! Bạn là thiên tài Lớp 8!";
+        else if(score >= 3) msg = "Rất tốt! Kiến thức của bạn rất chắc.";
+        else msg = "Cần cố gắng thêm nhé bạn ơi!";
+        document.getElementById('rank-msg').innerText = msg;
+    }
+
+    window.onload = init;
+</script>
+
+</body>
+</html>
